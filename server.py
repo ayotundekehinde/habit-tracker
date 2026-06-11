@@ -247,6 +247,48 @@ def create_habit():
     return jsonify(habit_to_dict(habit, [])), 201
 
 
+@app.put("/api/habits/<habit_id>")
+@require_auth
+def update_habit(habit_id: str):
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+
+    if not name:
+        return jsonify({"error": "Habit name is required"}), 400
+
+    with get_db() as conn:
+        habit = conn.execute(
+            "SELECT id, name, category FROM habits WHERE id = ? AND user_id = ?",
+            (habit_id, request.user_id),
+        ).fetchone()
+        if not habit:
+            return jsonify({"error": "Habit not found"}), 404
+
+        duplicate = conn.execute(
+            "SELECT id FROM habits WHERE user_id = ? AND LOWER(name) = LOWER(?) AND id != ?",
+            (request.user_id, name, habit_id),
+        ).fetchone()
+        if duplicate:
+            return jsonify({"error": "Habit already exists"}), 409
+
+        conn.execute(
+            "UPDATE habits SET name = ? WHERE id = ?",
+            (name, habit_id),
+        )
+        conn.commit()
+
+        dates = conn.execute(
+            "SELECT completed_date FROM completions WHERE habit_id = ? ORDER BY completed_date",
+            (habit_id,),
+        ).fetchall()
+        updated = conn.execute(
+            "SELECT id, name, category FROM habits WHERE id = ?",
+            (habit_id,),
+        ).fetchone()
+
+    return jsonify(habit_to_dict(updated, [row["completed_date"] for row in dates]))
+
+
 @app.post("/api/habits/<habit_id>/toggle")
 @require_auth
 def toggle_habit(habit_id: str):

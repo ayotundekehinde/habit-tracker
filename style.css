@@ -373,6 +373,34 @@ body {
   color: #fff;
 }
 
+.habit-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.habit-item.editing {
+  flex-wrap: wrap;
+}
+
+.habit-edit-input {
+  flex: 1 1 100%;
+  width: 100%;
+  font-weight: 600;
+}
+
+.habit-edit-error {
+  flex: 1 1 100%;
+  font-size: 0.8rem;
+  color: var(--danger);
+}
+
+.habit-edit-save,
+.habit-edit-cancel {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+}
+
 /* Filter */
 .filter-section {
   display: flex;
@@ -528,8 +556,12 @@ body {
     flex-wrap: wrap;
   }
 
-  .btn-danger {
+  .habit-actions {
     width: 100%;
     margin-top: 0.25rem;
+  }
+
+  .habit-actions .btn {
+    flex: 1;
   }
 }

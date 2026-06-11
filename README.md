@@ -5,6 +5,7 @@ A full-stack habit tracking web app for building consistent daily routines. Crea
 ## Features
 
 - **User accounts** — Register and log in to keep habits tied to your profile
+- **Edit habits** — Rename habits inline; completion history and streaks stay intact
 - **Daily check-ins** — Mark habits complete with a single click; toggle off if you checked by mistake
 - **Streak tracking** — See how many consecutive days you've kept each habit going
 - **Categories** — Organize habits by Study, Fitness, Monetization, Personal Development, or Other
@@ -73,8 +74,9 @@ On first run, a SQLite database (`habit_tracker.db`) is created automatically in
 1. **Sign up** with a username (3+ characters) and password (6+ characters), or log in to an existing account.
 2. **Add habits** using the form at the top — pick a name and category, then click **Add Habit**.
 3. **Check off habits** each day using the checkbox next to each item.
-4. **Filter** the list by category using the dropdown above your habit list.
-5. **Toggle dark mode** with the moon/sun button in the header.
+4. **Edit a habit** by clicking **Edit**, changing the name, and clicking **Save** (empty or whitespace-only names are rejected).
+5. **Filter** the list by category using the dropdown above your habit list.
+6. **Toggle dark mode** with the moon/sun button in the header.
 
 Your session stays active for 7 days via a stored JWT token.
 
@@ -102,6 +104,7 @@ All authenticated endpoints require a `Bearer` token in the `Authorization` head
 | GET    | `/api/me`                     | Get current user info          |
 | GET    | `/api/habits`                 | List all habits for the user   |
 | POST   | `/api/habits`                 | Create a habit                 |
+| PUT    | `/api/habits/:id`             | Update a habit name            |
 | POST   | `/api/habits/:id/toggle`      | Toggle today's completion      |
 | DELETE | `/api/habits/:id`             | Delete a habit                 |
 | POST   | `/api/habits/import`          | Import habits from local data  |

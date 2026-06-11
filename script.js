@@ -185,6 +185,16 @@ function createHabitElement(habit) {
   meta.append(badge, streak);
   info.append(name, meta);
 
+  const actions = document.createElement("div");
+  actions.className = "habit-actions";
+
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "btn btn-secondary";
+  editBtn.textContent = "Edit";
+  editBtn.setAttribute("aria-label", `Edit ${habit.name}`);
+  editBtn.addEventListener("click", () => enterEditMode(li, habit, name, actions));
+
   const deleteBtn = document.createElement("button");
   deleteBtn.type = "button";
   deleteBtn.className = "btn btn-danger";
@@ -192,8 +202,90 @@ function createHabitElement(habit) {
   deleteBtn.setAttribute("aria-label", `Delete ${habit.name}`);
   deleteBtn.addEventListener("click", () => deleteHabit(habit.id));
 
-  li.append(checkbox, info, deleteBtn);
+  actions.append(editBtn, deleteBtn);
+  li.append(checkbox, info, actions);
   return li;
+}
+
+function enterEditMode(li, habit, nameEl, actionsEl) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "habit-input habit-edit-input";
+  input.value = habit.name;
+  input.maxLength = 80;
+  input.setAttribute("aria-label", "Edit habit name");
+
+  const errorEl = document.createElement("span");
+  errorEl.className = "habit-edit-error hidden";
+  errorEl.setAttribute("role", "alert");
+
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "btn btn-primary habit-edit-save";
+  saveBtn.textContent = "Save";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "btn btn-secondary habit-edit-cancel";
+  cancelBtn.textContent = "Cancel";
+
+  const editActions = document.createElement("div");
+  editActions.className = "habit-actions";
+  editActions.append(saveBtn, cancelBtn);
+
+  const isValid = () => input.value.trim().length > 0;
+
+  const showError = (message) => {
+    errorEl.textContent = message;
+    errorEl.classList.remove("hidden");
+  };
+
+  const clearError = () => {
+    errorEl.textContent = "";
+    errorEl.classList.add("hidden");
+  };
+
+  nameEl.replaceWith(input, errorEl);
+  actionsEl.replaceWith(editActions);
+  li.classList.add("editing");
+  input.focus();
+  input.select();
+
+  saveBtn.disabled = !isValid();
+
+  input.addEventListener("input", () => {
+    saveBtn.disabled = !isValid();
+    if (isValid()) clearError();
+  });
+
+  const cancel = () => renderHabits();
+
+  const save = async () => {
+    const trimmed = input.value.trim();
+    if (!trimmed) {
+      showError("Habit name is required");
+      return;
+    }
+
+    saveBtn.disabled = true;
+    cancelBtn.disabled = true;
+    const result = await editHabit(habit.id, trimmed);
+    if (!result.success) {
+      showError(result.error);
+      saveBtn.disabled = !isValid();
+      cancelBtn.disabled = false;
+    }
+  };
+
+  cancelBtn.addEventListener("click", cancel);
+  saveBtn.addEventListener("click", save);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") cancel();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      save();
+    }
+  });
 }
 
 function renderHabits() {
@@ -264,6 +356,28 @@ async function toggleHabit(id) {
     renderHabits();
   } catch {
     renderHabits();
+  }
+}
+
+async function editHabit(id, newName) {
+  const trimmed = newName.trim();
+  if (!trimmed) {
+    return { success: false, error: "Habit name is required" };
+  }
+
+  try {
+    const habit = await api(`/api/habits/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ name: trimmed }),
+    });
+    const index = state.habits.findIndex((h) => h.id === id);
+    if (index !== -1) {
+      state.habits[index] = habit;
+    }
+    renderHabits();
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 }
 
